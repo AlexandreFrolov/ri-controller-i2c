@@ -2,10 +2,11 @@ import time
 import smbus
 import math
 
-# Адрес контроллера PCA9685 (введите свой адрес, если он был изменен).
+# Based on Adafruit Lib:
+# https://github.com/adafruit/Adafruit_Python_PCA9685/blob/master/Adafruit_PCA9685/PCA9685.py
+
 PCA9685_ADDRESS = 0x40
 
-# Регистры PCA9685.
 PCA9685_MODE1 = 0x00
 PCA9685_MODE2 = 0x01
 
@@ -18,6 +19,7 @@ PCA9685_ALL_LED_ON_L  = 0xFA
 PCA9685_ALL_LED_ON_H  = 0xFB
 PCA9685_ALL_LED_OFF_L = 0xFC
 PCA9685_ALL_LED_OFF_H = 0xFD
+
 PCA9685_PRESCALE      = 0xFE
 
 ALLCALL            = 0x01
@@ -73,9 +75,11 @@ def set_servo_angle(channel, angle):
         angle = 0
     elif angle > 180:
         angle = 180
-        
-    sg90_servo_min_pulse = 500      # минимальная длина импульса для sg90 в мкс
-    sg90_servo_maxn_pulse = 2400    # максимальная длина импульса для sg90 в мкс
+
+    # Минимальная и максимальная длина импульса для sg90 в мкс
+    sg90_servo_min_pulse = 500
+    sg90_servo_maxn_pulse = 2400
+    
     servo_min = pulse_to_pwm(500, 50)
     servo_max = pulse_to_pwm(2400, 50)
 
@@ -85,18 +89,14 @@ def set_servo_angle(channel, angle):
     set_pwm(channel, 0, pulse_width)
 
 def initialize_pca9685():
-    set_all_pwm(0, 0)
-    time.sleep(2)
-
     bus.write_byte_data(PCA9685_ADDRESS, PCA9685_MODE2, OUTDRV)
-    bus.write_byte_data(PCA9685_ADDRESS, PCA9685_MODE1, ALLCALL)
+#    bus.write_byte_data(PCA9685_ADDRESS, PCA9685_MODE1, ALLCALL)
     time.sleep(0.005)
     
-
     mode1 = bus.read_byte_data(PCA9685_ADDRESS, PCA9685_MODE1)
-    mode1 = mode1 & ~SLEEP                                    # wake up (reset sleep)
+    mode1 = mode1 & ~SLEEP 
     bus.write_byte_data(PCA9685_ADDRESS, PCA9685_MODE1, mode1)
-    time.sleep(0.005)                                         # wait for oscillator
+    time.sleep(0.005)
 
 
 def reset():
@@ -105,14 +105,14 @@ def reset():
 
 
 def set_pwm_freq(freq_hz):
-    prescaleval = 25000000.0                                  # 25MHz
-    prescaleval /= 4096.0                                     # 12-bit
+    prescaleval = 25000000.0 
+    prescaleval /= 4096.0 
     prescaleval /= float(freq_hz)
     prescaleval -= 1.0
     prescale = int(math.floor(prescaleval + 0.5))
     oldmode = bus.read_byte_data(PCA9685_ADDRESS, PCA9685_MODE1)
-    newmode = (oldmode & 0x7F) | 0x10                         # sleep
-    bus.write_byte_data(PCA9685_ADDRESS, PCA9685_MODE1, newmode) # go to sleep
+    newmode = (oldmode & 0x7F) | 0x10  
+    bus.write_byte_data(PCA9685_ADDRESS, PCA9685_MODE1, newmode)
     bus.write_byte_data(PCA9685_ADDRESS, PCA9685_PRESCALE, prescale)
     bus.write_byte_data(PCA9685_ADDRESS, PCA9685_MODE1, oldmode)
     time.sleep(0.005)
@@ -122,31 +122,19 @@ try:
     initialize_pca9685()
     set_pwm_freq(50)
     
-    
     while True:
-        set_servo_angle(CHANNEL00, 0) # 600 мс
+        set_servo_angle(CHANNEL00, 0)
         time.sleep(2)
-
-        input("Введите что-нибудь для продолжения:")
-        
-        set_servo_angle(CHANNEL00, 90) # 1460 мс
+        set_servo_angle(CHANNEL00, 90)
         time.sleep(2)
-
-        input("Введите что-нибудь для продолжения:")
-
-        set_servo_angle(CHANNEL00, 180) # 2340 мс
+        set_servo_angle(CHANNEL00, 180)
         time.sleep(2)
-        input("Введите что-нибудь для продолжения:")
-
-#        set_servo_angle(CHANNEL03, 0)
-#        time.sleep(2)
-
-#        set_servo_angle(CHANNEL03, 90)
-#        time.sleep(2)
-
-#        set_servo_angle(CHANNEL03, 180)
-#        time.sleep(2)
-
+        set_servo_angle(CHANNEL03, 0)
+        time.sleep(2)
+        set_servo_angle(CHANNEL03, 90)
+        time.sleep(2)
+        set_servo_angle(CHANNEL03, 180)
+        time.sleep(2)
 
 except KeyboardInterrupt:
     pass
